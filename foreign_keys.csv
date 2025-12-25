@@ -1,0 +1,12 @@
+constraint_name,table_name,column_name,foreign_table_name,foreign_column_name,update_rule,delete_rule
+pazienti_luogo_nascita_codice_fkey,pazienti,luogo_nascita_codice,codici_catastali,codice,NO ACTION,NO ACTION
+pazienti_stato_estero_fkey,pazienti,stato_nascita_codice,stati_esteri,codice,NO ACTION,NO ACTION
+pazienti_documenti_paziente_id_fkey,pazienti_documenti,paziente_id,pazienti,id,NO ACTION,CASCADE
+pazienti_messaggi_paziente_id_fkey,pazienti_messaggi,paziente_id,pazienti,id,NO ACTION,CASCADE
+prelievi_stato_id_fkey,prelievi,stato_id,stati_prelievo,id,NO ACTION,NO ACTION
+prelievi_paziente_id_fkey,prelievi,paziente_id,pazienti,id,NO ACTION,CASCADE
+prelievi_tipo_prelievo_id_fkey,prelievi,tipo_prelievo_id,tipi_prelievo,id,NO ACTION,NO ACTION
+prelievi_laboratorio_id_fkey,prelievi,laboratorio_id,laboratori,id,NO ACTION,NO ACTION
+prelievi_notifiche_prelievo_id_fkey,prelievi_notifiche,prelievo_id,prelievi,id,NO ACTION,CASCADE
+prelievi_notifiche_paziente_id_fkey,prelievi_notifiche,paziente_id,pazienti,id,NO ACTION,CASCADE
+referti_download_logs_prelievo_id_fkey,referti_download_logs,prelievo_id,prelievi,id,NO ACTION,CASCADE

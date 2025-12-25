@@ -1,0 +1,29 @@
+schemaname,tablename,policyname,permissive,roles,command,using_expression,with_check
+public,codici_catastali,codici_catastali_select_staff,PERMISSIVE,{authenticated},SELECT,is_staff(),null
+public,laboratori,laboratori_all_admin,PERMISSIVE,{authenticated},ALL,is_admin(),is_admin()
+public,pazienti,pazienti_delete_admin,PERMISSIVE,{authenticated},DELETE,is_admin(),null
+public,pazienti,pazienti_insert_staff,PERMISSIVE,{authenticated},INSERT,null,is_staff()
+public,pazienti,pazienti_select_staff_or_self,PERMISSIVE,{authenticated},SELECT,(is_staff() OR (auth_user_id = auth.uid())),null
+public,pazienti,pazienti_update_staff,PERMISSIVE,{authenticated},UPDATE,is_staff(),is_staff()
+public,pazienti_documenti,pazienti_documenti_delete_admin,PERMISSIVE,{authenticated},DELETE,is_admin(),null
+public,pazienti_documenti,pazienti_documenti_insert_admin,PERMISSIVE,{authenticated},INSERT,null,is_admin()
+public,pazienti_documenti,pazienti_documenti_select_admin_or_patient_published,PERMISSIVE,{authenticated},SELECT,"(is_admin() OR ((EXISTS ( SELECT 1
+   FROM pazienti p
+  WHERE ((p.id = pazienti_documenti.paziente_id) AND (p.auth_user_id = auth.uid())))) AND (pubblicato_at IS NOT NULL) AND ((scade_at IS NULL) OR (scade_at > now()))))",null
+public,pazienti_documenti,pazienti_documenti_update_admin,PERMISSIVE,{authenticated},UPDATE,is_admin(),is_admin()
+public,pazienti_messaggi,pazienti_messaggi_delete_admin,PERMISSIVE,{authenticated},DELETE,is_admin(),null
+public,pazienti_messaggi,pazienti_messaggi_insert_admin,PERMISSIVE,{authenticated},INSERT,null,is_admin()
+public,pazienti_messaggi,pazienti_messaggi_select_admin_or_patient_published,PERMISSIVE,{authenticated},SELECT,(is_admin() OR ((paziente_id = current_paziente_id()) AND (pubblicato_at IS NOT NULL))),null
+public,pazienti_messaggi,pazienti_messaggi_update_admin,PERMISSIVE,{authenticated},UPDATE,is_admin(),is_admin()
+public,prelievi,prelievi_delete_staff,PERMISSIVE,{authenticated},DELETE,is_staff(),null
+public,prelievi,prelievi_select_self_patient,PERMISSIVE,{authenticated},SELECT,(is_paziente() AND (paziente_id = current_paziente_id())),null
+public,prelievi,prelievi_select_staff,PERMISSIVE,{authenticated},SELECT,is_staff(),null
+public,prelievi,prelievi_update_staff,PERMISSIVE,{authenticated},UPDATE,is_staff(),is_staff()
+public,prelievi,prelievi_write_staff,PERMISSIVE,{authenticated},INSERT,null,is_staff()
+public,profili_utenti,profili_utenti_select_staff_or_self,PERMISSIVE,{authenticated},SELECT,(is_staff() OR (id = auth.uid())),null
+public,profili_utenti,profili_utenti_update_staff,PERMISSIVE,{authenticated},UPDATE,is_staff(),is_staff()
+public,referti_download_logs,referti_download_logs_delete_admin,PERMISSIVE,{authenticated},DELETE,is_admin(),null
+public,referti_download_logs,referti_download_logs_insert_gate,PERMISSIVE,{authenticated},INSERT,null,can_insert_download_log(prelievo_id)
+public,referti_download_logs,referti_download_logs_select_admin,PERMISSIVE,{authenticated},SELECT,is_admin(),null
+public,stati_prelievo,stati_prelievo_all_admin,PERMISSIVE,{authenticated},ALL,is_admin(),is_admin()
+public,tipi_prelievo,tipi_prelievo_all_staff,PERMISSIVE,{authenticated},ALL,is_staff(),is_staff()

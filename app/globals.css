@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Stili per React Quill */
+.quill {
+  @apply bg-white;
+}
+
+.quill .ql-container {
+  @apply border-gray-300 rounded-b-md;
+  min-height: 300px;
+}
+
+.quill .ql-toolbar {
+  @apply border-gray-300 rounded-t-md bg-gray-50;
+}
+
+.quill .ql-editor {
+  @apply text-gray-900;
+  min-height: 300px;
+}
+
+/* Permette di applicare font-size e line-height dinamicamente */
+.quill .ql-editor p,
+.quill .ql-editor div,
+.quill .ql-editor span {
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.quill .ql-editor.ql-blank::before {
+  @apply text-gray-400 italic;
+}
+

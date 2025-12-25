@@ -1,0 +1,115 @@
+table_name,column_name,data_type,is_nullable,column_default,character_maximum_length,numeric_precision,numeric_scale
+codici_catastali,codice,character varying,NO,null,4,null,null
+codici_catastali,comune,character varying,NO,null,100,null,null
+codici_catastali,provincia,character varying,NO,null,2,null,null
+laboratori,id,uuid,NO,gen_random_uuid(),null,null,null
+laboratori,nome,character varying,NO,null,100,null,null
+laboratori,indirizzo,character varying,YES,null,200,null,null
+laboratori,telefono,character varying,YES,null,20,null,null
+laboratori,email,character varying,YES,null,100,null,null
+laboratori,created_at,timestamp with time zone,YES,now(),null,null,null
+laboratori,updated_at,timestamp with time zone,YES,now(),null,null,null
+pazienti,id,uuid,NO,gen_random_uuid(),null,null,null
+pazienti,nome,character varying,NO,null,100,null,null
+pazienti,cognome,character varying,NO,null,100,null,null
+pazienti,data_nascita,date,YES,null,null,null,null
+pazienti,luogo_nascita_codice,character varying,YES,null,4,null,null
+pazienti,luogo_nascita_comune,character varying,YES,null,100,null,null
+pazienti,luogo_nascita_provincia,character varying,YES,null,2,null,null
+pazienti,cellulare,character varying,YES,null,20,null,null
+pazienti,email,character varying,YES,null,100,null,null
+pazienti,codice_fiscale,character varying,YES,null,16,null,null
+pazienti,created_at,timestamp with time zone,YES,now(),null,null,null
+pazienti,updated_at,timestamp with time zone,YES,now(),null,null,null
+pazienti,auth_user_id,uuid,YES,null,null,null,null
+pazienti,sesso,character,YES,null,1,null,null
+pazienti,nato_estero,boolean,NO,false,null,null,null
+pazienti,stato_nascita_codice,text,YES,null,null,null,null
+pazienti,stato_nascita_nome,text,YES,null,null,null,null
+pazienti_documenti,id,uuid,NO,gen_random_uuid(),null,null,null
+pazienti_documenti,paziente_id,uuid,NO,null,null,null,null
+pazienti_documenti,titolo,text,NO,null,null,null,null
+pazienti_documenti,descrizione,text,YES,null,null,null,null
+pazienti_documenti,s3_key,text,NO,null,null,null,null
+pazienti_documenti,mime,text,YES,null,null,null,null
+pazienti_documenti,size_bytes,bigint,YES,null,null,64,0
+pazienti_documenti,uploaded_at,timestamp with time zone,NO,now(),null,null,null
+pazienti_documenti,uploaded_by,uuid,YES,null,null,null,null
+pazienti_documenti,pubblicato_at,timestamp with time zone,YES,null,null,null,null
+pazienti_documenti,scade_at,timestamp with time zone,YES,null,null,null,null
+pazienti_documenti,notificato_at,timestamp with time zone,YES,null,null,null,null
+pazienti_documenti,notifica_canale,text,YES,null,null,null,null
+pazienti_documenti,notifica_esito,text,YES,null,null,null,null
+pazienti_messaggi,id,uuid,NO,gen_random_uuid(),null,null,null
+pazienti_messaggi,paziente_id,uuid,NO,null,null,null,null
+pazienti_messaggi,testo,text,NO,null,null,null,null
+pazienti_messaggi,created_at,timestamp with time zone,NO,now(),null,null,null
+pazienti_messaggi,created_by,uuid,YES,null,null,null,null
+pazienti_messaggi,letto_at,timestamp with time zone,YES,null,null,null,null
+pazienti_messaggi,letto_da,uuid,YES,null,null,null,null
+pazienti_messaggi,pubblicato_at,timestamp with time zone,YES,null,null,null,null
+pazienti_messaggi,nascosto,boolean,NO,false,null,null,null
+prelievi,id,uuid,NO,gen_random_uuid(),null,null,null
+prelievi,paziente_id,uuid,NO,null,null,null,null
+prelievi,laboratorio_id,uuid,NO,null,null,null,null
+prelievi,tipo_prelievo_id,uuid,NO,null,null,null,null
+prelievi,stato_id,uuid,NO,null,null,null,null
+prelievi,data_prelievo,date,NO,null,null,null,null
+prelievi,esito_pdf_url,text,YES,null,null,null,null
+prelievi,note,text,YES,null,null,null,null
+prelievi,created_at,timestamp with time zone,YES,now(),null,null,null
+prelievi,updated_at,timestamp with time zone,YES,now(),null,null,null
+prelievi,data_stimata_referto,date,YES,null,null,null,null
+prelievi,esito_pdf_s3_key,text,YES,null,null,null,null
+prelievi,esito_pdf_uploaded_at,timestamp with time zone,YES,null,null,null,null
+prelievi,esito_pdf_uploaded_by,uuid,YES,null,null,null,null
+prelievi,esito_pdf_mime,text,YES,null,null,null,null
+prelievi,esito_pdf_size_bytes,bigint,YES,null,null,64,0
+prelievi,referto_pubblicato_at,timestamp with time zone,YES,null,null,null,null
+prelievi,referto_scade_at,timestamp with time zone,YES,null,null,null,null
+prelievi,referto_notificato_at,timestamp with time zone,YES,null,null,null,null
+prelievi,referto_notifica_canale,text,YES,null,null,null,null
+prelievi,referto_notifica_esito,text,YES,null,null,null,null
+prelievi,referto_ultimo_download_at,timestamp with time zone,YES,null,null,null,null
+prelievi_notifiche,id,uuid,NO,gen_random_uuid(),null,null,null
+prelievi_notifiche,prelievo_id,uuid,NO,null,null,null,null
+prelievi_notifiche,paziente_id,uuid,NO,null,null,null,null
+prelievi_notifiche,canale,text,NO,null,null,null,null
+prelievi_notifiche,destinatario,text,NO,null,null,null,null
+prelievi_notifiche,oggetto,text,YES,null,null,null,null
+prelievi_notifiche,testo,text,NO,null,null,null,null
+prelievi_notifiche,status,text,NO,'PENDING'::text,null,null,null
+prelievi_notifiche,attempts,integer,NO,0,null,32,0
+prelievi_notifiche,last_error,text,YES,null,null,null,null
+prelievi_notifiche,created_at,timestamp with time zone,NO,now(),null,null,null
+prelievi_notifiche,sent_at,timestamp with time zone,YES,null,null,null,null
+profili_utenti,id,uuid,NO,null,null,null,null
+profili_utenti,nome,character varying,NO,null,100,null,null
+profili_utenti,cognome,character varying,NO,null,100,null,null
+profili_utenti,ruolo,character varying,NO,null,20,null,null
+profili_utenti,attivo,boolean,YES,true,null,null,null
+profili_utenti,created_at,timestamp with time zone,YES,now(),null,null,null
+profili_utenti,updated_at,timestamp with time zone,YES,now(),null,null,null
+referti_download_logs,id,uuid,NO,gen_random_uuid(),null,null,null
+referti_download_logs,prelievo_id,uuid,NO,null,null,null,null
+referti_download_logs,user_id,uuid,YES,null,null,null,null
+referti_download_logs,downloaded_at,timestamp with time zone,NO,now(),null,null,null
+referti_download_logs,ip_address,inet,YES,null,null,null,null
+referti_download_logs,user_agent,text,YES,null,null,null,null
+referti_download_logs,created_at,timestamp with time zone,NO,now(),null,null,null
+stati_esteri,codice,text,NO,null,null,null,null
+stati_esteri,nome_it,text,NO,null,null,null,null
+stati_esteri,attivo,boolean,NO,true,null,null,null
+stati_prelievo,id,uuid,NO,gen_random_uuid(),null,null,null
+stati_prelievo,nome,character varying,NO,null,50,null,null
+stati_prelievo,ordine,integer,NO,null,null,32,0
+stati_prelievo,colore,character varying,YES,null,20,null,null
+stati_prelievo,created_at,timestamp with time zone,YES,now(),null,null,null
+stati_prelievo,updated_at,timestamp with time zone,YES,now(),null,null,null
+tipi_prelievo,id,uuid,NO,gen_random_uuid(),null,null,null
+tipi_prelievo,nome,character varying,NO,null,100,null,null
+tipi_prelievo,descrizione,text,YES,null,null,null,null
+tipi_prelievo,attivo,boolean,YES,true,null,null,null
+tipi_prelievo,created_at,timestamp with time zone,YES,now(),null,null,null
+tipi_prelievo,updated_at,timestamp with time zone,YES,now(),null,null,null
+tipi_prelievo,tempo_refertazione_giorni,integer,YES,null,null,32,0

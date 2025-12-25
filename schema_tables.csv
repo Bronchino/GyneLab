@@ -1,0 +1,13 @@
+table_schema,table_name,table_type
+public,codici_catastali,BASE TABLE
+public,laboratori,BASE TABLE
+public,pazienti,BASE TABLE
+public,pazienti_documenti,BASE TABLE
+public,pazienti_messaggi,BASE TABLE
+public,prelievi,BASE TABLE
+public,prelievi_notifiche,BASE TABLE
+public,profili_utenti,BASE TABLE
+public,referti_download_logs,BASE TABLE
+public,stati_esteri,BASE TABLE
+public,stati_prelievo,BASE TABLE
+public,tipi_prelievo,BASE TABLE
