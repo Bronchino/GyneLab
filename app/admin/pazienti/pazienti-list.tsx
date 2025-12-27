@@ -16,7 +16,15 @@ const ITEMS_PER_PAGE = 20
 
 export default function PazientiList({ pazienti, canDelete, currentSort = 'asc', currentOrderBy = 'cognome' }: PazientiListProps) {
   const [generandoPrivacy, setGenerandoPrivacy] = useState<string | null>(null)
+  const [generandoCredenziali, setGenerandoCredenziali] = useState<string | null>(null)
   const [itemsToShow, setItemsToShow] = useState(20) // Mostra inizialmente 20 elementi
+  const [mostraModalPDF, setMostraModalPDF] = useState(false)
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null)
+  const [pazienteIdPerPDF, setPazienteIdPerPDF] = useState<string | null>(null)
+  const [credenzialiGenerate, setCredenzialiGenerate] = useState<{ username: string; password: string } | null>(null)
+  const [mostraModalConfermaRigenera, setMostraModalConfermaRigenera] = useState(false)
+  const [pazienteIdPerRigenera, setPazienteIdPerRigenera] = useState<string | null>(null)
+  const [pazienteNomePerRigenera, setPazienteNomePerRigenera] = useState<string>('')
   
   const pazientiToShow = pazienti.slice(0, itemsToShow)
   const hasMore = pazienti.length > itemsToShow
@@ -115,6 +123,103 @@ export default function PazientiList({ pazienti, canDelete, currentSort = 'asc',
 
   const handleLoadMore = () => {
     setItemsToShow(prev => prev + ITEMS_PER_PAGE)
+  }
+
+  const handleClickChiave = (paziente: Paziente, e: React.MouseEvent) => {
+    e.stopPropagation()
+    e.preventDefault()
+    
+    // Se le credenziali non esistono, genera direttamente
+    if (!paziente.auth_user_id) {
+      handleGeneraCredenziali(paziente.id, e)
+      return
+    }
+    
+    // Se le credenziali esistono, chiedi conferma per rigenerare
+    setPazienteIdPerRigenera(paziente.id)
+    setPazienteNomePerRigenera(`${paziente.nome} ${paziente.cognome}`)
+    setMostraModalConfermaRigenera(true)
+  }
+
+  const handleConfermaRigenera = async () => {
+    if (!pazienteIdPerRigenera) return
+    
+    setMostraModalConfermaRigenera(false)
+    setGenerandoCredenziali(pazienteIdPerRigenera)
+    
+    try {
+      const response = await fetch(`/api/pazienti/${pazienteIdPerRigenera}/rigenera-password`, {
+        method: 'POST',
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        alert(errorData.error || 'Errore durante la rigenerazione delle credenziali')
+        setGenerandoCredenziali(null)
+        setPazienteIdPerRigenera(null)
+        setPazienteNomePerRigenera('')
+        return
+      }
+
+      const data = await response.json()
+      
+      // Salva le credenziali e apri il modal PDF
+      setCredenzialiGenerate({
+        username: data.username,
+        password: data.password,
+      })
+      setPazienteIdPerPDF(pazienteIdPerRigenera)
+      
+      // Costruisci l'URL del PDF
+      const url = `/api/pazienti/${pazienteIdPerRigenera}/credenziali-pdf?username=${encodeURIComponent(data.username)}&password=${encodeURIComponent(data.password)}`
+      setPdfUrl(url)
+      setMostraModalPDF(true)
+      setGenerandoCredenziali(null)
+      setPazienteIdPerRigenera(null)
+      setPazienteNomePerRigenera('')
+    } catch (err) {
+      alert('Errore durante la rigenerazione delle credenziali')
+      setGenerandoCredenziali(null)
+      setPazienteIdPerRigenera(null)
+      setPazienteNomePerRigenera('')
+    }
+  }
+
+  const handleGeneraCredenziali = async (pazienteId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    e.preventDefault()
+    
+    setGenerandoCredenziali(pazienteId)
+    try {
+      const response = await fetch(`/api/pazienti/${pazienteId}/genera-credenziali`, {
+        method: 'POST',
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        alert(errorData.error || 'Errore durante la generazione delle credenziali')
+        setGenerandoCredenziali(null)
+        return
+      }
+
+      const data = await response.json()
+      
+      // Salva le credenziali e apri il modal PDF
+      setCredenzialiGenerate({
+        username: data.username,
+        password: data.password,
+      })
+      setPazienteIdPerPDF(pazienteId)
+      
+      // Costruisci l'URL del PDF
+      const url = `/api/pazienti/${pazienteId}/credenziali-pdf?username=${encodeURIComponent(data.username)}&password=${encodeURIComponent(data.password)}`
+      setPdfUrl(url)
+      setMostraModalPDF(true)
+      setGenerandoCredenziali(null)
+    } catch (err) {
+      alert('Errore durante la generazione delle credenziali')
+      setGenerandoCredenziali(null)
+    }
   }
 
   return (
@@ -228,15 +333,26 @@ export default function PazientiList({ pazienti, canDelete, currentSort = 'asc',
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium action-icons">
                     <div className="flex items-center justify-end space-x-2">
-                      {/* Icona 1 - Verde (non attiva per ora) */}
+                      {/* Icona 1 - Chiave (lampeggia se credenziali non generate) */}
                       <button
-                        className="p-1 text-green-600 opacity-30 cursor-not-allowed"
-                        disabled
-                        title="Non disponibile"
+                        onClick={(e) => handleClickChiave(paziente, e)}
+                        disabled={generandoCredenziali === paziente.id}
+                        className={`p-1 hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed ${
+                          !paziente.auth_user_id 
+                            ? 'text-yellow-600 hover:text-yellow-700 animate-key-blink' 
+                            : 'text-green-600 hover:text-green-700'
+                        }`}
+                        title={!paziente.auth_user_id ? "Genera credenziali (non ancora generate)" : "Rigenera credenziali"}
                       >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
+                        {generandoCredenziali === paziente.id ? (
+                          <svg className="w-5 h-5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                        ) : (
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                          </svg>
+                        )}
                       </button>
 
                       {/* Icona 2 - Download PDF Privacy */}
@@ -303,6 +419,100 @@ export default function PazientiList({ pazienti, canDelete, currentSort = 'asc',
             </svg>
           </button>
         </div>
+      )}
+
+      {/* Modal Conferma Rigenera Credenziali */}
+      {mostraModalConfermaRigenera && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-xl font-bold mb-4">Rigenera Credenziali</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Sei sicuro di voler rigenerare le credenziali per <strong>{pazienteNomePerRigenera}</strong>?
+            </p>
+            <p className="text-xs text-yellow-600 mb-6 bg-yellow-50 p-3 rounded border border-yellow-200">
+              ⚠️ Attenzione: La password verrà rigenerata. Il paziente dovrà usare la nuova password per accedere.
+            </p>
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setMostraModalConfermaRigenera(false)
+                  setPazienteIdPerRigenera(null)
+                  setPazienteNomePerRigenera('')
+                }}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+              >
+                Annulla
+              </button>
+              <button
+                type="button"
+                onClick={handleConfermaRigenera}
+                className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700"
+              >
+                Rigenera Credenziali
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal PDF Viewer */}
+      {mostraModalPDF && pdfUrl && (
+        <>
+          <style jsx global>{`
+            @media print {
+              body * {
+                visibility: hidden;
+              }
+              .pdf-modal-iframe,
+              .pdf-modal-iframe * {
+                visibility: visible;
+              }
+              .pdf-modal-iframe {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+              }
+              .no-print-pdf {
+                display: none !important;
+              }
+            }
+          `}</style>
+          <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg w-[90vw] h-[90vh] max-w-5xl flex flex-col">
+              {/* Header con controlli */}
+              <div className="no-print-pdf flex items-center justify-between p-4 border-b border-gray-200">
+                <h3 className="text-xl font-bold">Credenziali Generate</h3>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMostraModalPDF(false)
+                      setPdfUrl(null)
+                      setPazienteIdPerPDF(null)
+                      setCredenzialiGenerate(null)
+                      // Ricarica la pagina per aggiornare lo stato dell'icona
+                      window.location.reload()
+                    }}
+                    className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+                  >
+                    Chiudi
+                  </button>
+                </div>
+              </div>
+              {/* Iframe con PDF */}
+              <div className="flex-1 overflow-hidden">
+                <iframe
+                  src={pdfUrl}
+                  className="pdf-modal-iframe w-full h-full border-0"
+                  title="PDF Credenziali"
+                />
+              </div>
+            </div>
+          </div>
+        </>
       )}
     </div>
   )

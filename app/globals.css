@@ -33,3 +33,19 @@
   @apply text-gray-400 italic;
 }
 
+/* Animazione lampeggio per icona chiave credenziali */
+@keyframes key-blink {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.1);
+  }
+}
+
+.animate-key-blink {
+  animation: key-blink 0.8s ease-in-out infinite;
+}
+

@@ -11,6 +11,14 @@ export default function NuovoPazienteForm() {
   const [parsingCf, setParsingCf] = useState(false)
   const [pazienteCreato, setPazienteCreato] = useState<string | null>(null)
   const [generandoPrivacy, setGenerandoPrivacy] = useState(false)
+  const [generandoCredenziali, setGenerandoCredenziali] = useState(false)
+  const [credenziali, setCredenziali] = useState<{
+    username: string
+    password: string
+  } | null>(null)
+  const [mostraModalCredenziali, setMostraModalCredenziali] = useState(false)
+  const [mostraModalPDF, setMostraModalPDF] = useState(false)
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null)
   
   const [formData, setFormData] = useState({
     codice_fiscale: '',
@@ -60,9 +68,12 @@ export default function NuovoPazienteForm() {
         return
       }
 
-      // Salva l'ID del paziente creato e mostra il pulsante per generare privacy
+      // Salva l'ID del paziente creato
       setPazienteCreato(data.id)
       setLoading(false)
+
+      // Genera automaticamente le credenziali
+      await generaCredenziali(data.id)
     } catch (err) {
       setError('Errore durante la creazione del paziente')
       setLoading(false)
@@ -178,6 +189,79 @@ export default function NuovoPazienteForm() {
     setFormData({ ...formData, codice_fiscale: e.target.value.toUpperCase() })
   }
 
+  const generaCredenziali = async (pazienteId: string) => {
+    setGenerandoCredenziali(true)
+    setError(null)
+
+    try {
+      const response = await fetch(`/api/pazienti/${pazienteId}/genera-credenziali`, {
+        method: 'POST',
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        setError(errorData.error || 'Errore durante la generazione delle credenziali')
+        setGenerandoCredenziali(false)
+        return
+      }
+
+      const data = await response.json()
+      setCredenziali({
+        username: data.username,
+        password: data.password,
+      })
+      setMostraModalCredenziali(true)
+      setGenerandoCredenziali(false)
+
+      // Scarica automaticamente il PDF
+      await scaricaPDFCredenziali(pazienteId, data.username, data.password)
+    } catch (err) {
+      setError('Errore durante la generazione delle credenziali')
+      setGenerandoCredenziali(false)
+    }
+  }
+
+  const scaricaPDFCredenziali = async (
+    pazienteId: string,
+    username: string,
+    password: string
+  ) => {
+    try {
+      const response = await fetch(
+        `/api/pazienti/${pazienteId}/credenziali-pdf?username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`
+      )
+
+      if (!response.ok) {
+        console.error('Errore durante il download del PDF')
+        return
+      }
+
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      const contentDisposition = response.headers.get('Content-Disposition')
+      const filename = contentDisposition
+        ? contentDisposition.split('filename=')[1]?.replace(/"/g, '')
+        : `credenziali_${formData.cognome}_${formData.nome}_${new Date().toISOString().split('T')[0]}.pdf`
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+    } catch (err) {
+      console.error('Errore durante il download del PDF:', err)
+    }
+  }
+
+  const copiaCredenziali = (tipo: 'username' | 'password') => {
+    if (!credenziali) return
+
+    const testo = tipo === 'username' ? credenziali.username : credenziali.password
+    navigator.clipboard.writeText(testo)
+    alert(`${tipo === 'username' ? 'Username' : 'Password'} copiato negli appunti!`)
+  }
+
   const handleGeneraPrivacy = async () => {
     if (!pazienteCreato) return
 
@@ -224,25 +308,209 @@ export default function NuovoPazienteForm() {
       {pazienteCreato && (
         <div className="rounded-md bg-green-50 p-4 text-green-800">
           <p className="font-medium mb-3">Paziente creato con successo!</p>
-          <button
-            type="button"
-            onClick={handleGeneraPrivacy}
-            disabled={generandoPrivacy}
-            className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 disabled:opacity-50"
-          >
-            {generandoPrivacy ? 'Generazione PDF...' : 'Genera Privacy'}
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              router.push('/admin/pazienti')
-              router.refresh()
-            }}
-            className="ml-3 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
-          >
-            Vai alla Lista
-          </button>
+          {generandoCredenziali && (
+            <p className="text-sm mb-3">Generazione credenziali in corso...</p>
+          )}
+          {credenziali && (
+            <p className="text-sm mb-3 text-green-700">
+              ✓ Credenziali generate. Il PDF è stato scaricato automaticamente.
+            </p>
+          )}
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={handleGeneraPrivacy}
+              disabled={generandoPrivacy}
+              className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 disabled:opacity-50"
+            >
+              {generandoPrivacy ? 'Generazione PDF...' : 'Genera Privacy'}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                router.push('/admin/pazienti')
+                router.refresh()
+              }}
+              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
+            >
+              Vai alla Lista
+            </button>
+          </div>
         </div>
+      )}
+
+      {/* Modal Credenziali */}
+      {mostraModalCredenziali && credenziali && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-xl font-bold mb-4">Credenziali Generate</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Le credenziali sono state generate e il PDF è stato scaricato automaticamente.
+            </p>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Username:
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={credenziali.username}
+                    readOnly
+                    className="flex-1 block w-full rounded-md border border-gray-300 px-3 py-2 bg-gray-50 font-mono"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => copiaCredenziali('username')}
+                    className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                    title="Copia username"
+                  >
+                    📋
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Password:
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={credenziali.password}
+                    readOnly
+                    className="flex-1 block w-full rounded-md border border-gray-300 px-3 py-2 bg-gray-50 font-mono"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => copiaCredenziali('password')}
+                    className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                    title="Copia password"
+                  >
+                    📋
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  // #region agent log
+                  fetch('http://127.0.0.1:7244/ingest/0247e7cd-30b8-41ea-9da5-caa078df417d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/admin/pazienti/nuovo/nuovo-paziente-form.tsx:395',message:'Click Stampa Credenziali',data:{pazienteCreato,hasCredenziali:!!credenziali},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+                  // #endregion
+                  if (pazienteCreato && credenziali) {
+                    const url = `/api/pazienti/${pazienteCreato}/credenziali-pdf?username=${encodeURIComponent(credenziali.username)}&password=${encodeURIComponent(credenziali.password)}`
+                    // #region agent log
+                    fetch('http://127.0.0.1:7244/ingest/0247e7cd-30b8-41ea-9da5-caa078df417d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/admin/pazienti/nuovo/nuovo-paziente-form.tsx:399',message:'Setting PDF URL and opening modal',data:{url},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+                    // #endregion
+                    setPdfUrl(url)
+                    setMostraModalPDF(true)
+                  }
+                }}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                </svg>
+                Stampa Credenziali
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMostraModalCredenziali(false)
+                  router.push('/admin/pazienti')
+                  router.refresh()
+                }}
+                className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700"
+              >
+                Chiudi
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal PDF Viewer */}
+      {mostraModalPDF && pdfUrl && (
+        <>
+          <style jsx global>{`
+            @media print {
+              body * {
+                visibility: hidden;
+              }
+              .pdf-modal-iframe,
+              .pdf-modal-iframe * {
+                visibility: visible;
+              }
+              .pdf-modal-iframe {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+              }
+              .no-print-pdf {
+                display: none !important;
+              }
+            }
+          `}</style>
+          <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg w-[90vw] h-[90vh] max-w-5xl flex flex-col">
+              {/* Header con controlli */}
+              <div className="no-print-pdf flex items-center justify-between p-4 border-b border-gray-200">
+                <h3 className="text-xl font-bold">Stampa Credenziali</h3>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      // #region agent log
+                      fetch('http://127.0.0.1:7244/ingest/0247e7cd-30b8-41ea-9da5-caa078df417d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/admin/pazienti/nuovo/nuovo-paziente-form.tsx:445',message:'Click Stampa button',data:{pdfUrl},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+                      // #endregion
+                      window.print()
+                    }}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                    </svg>
+                    Stampa
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      // #region agent log
+                      fetch('http://127.0.0.1:7244/ingest/0247e7cd-30b8-41ea-9da5-caa078df417d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/admin/pazienti/nuovo/nuovo-paziente-form.tsx:457',message:'Closing PDF modal',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+                      // #endregion
+                      setMostraModalPDF(false)
+                      setPdfUrl(null)
+                    }}
+                    className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+                  >
+                    Chiudi
+                  </button>
+                </div>
+              </div>
+              {/* Iframe con PDF */}
+              <div className="flex-1 overflow-hidden">
+                <iframe
+                  src={pdfUrl}
+                  className="pdf-modal-iframe w-full h-full border-0"
+                  title="PDF Credenziali"
+                  onLoad={() => {
+                    // #region agent log
+                    fetch('http://127.0.0.1:7244/ingest/0247e7cd-30b8-41ea-9da5-caa078df417d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/admin/pazienti/nuovo/nuovo-paziente-form.tsx:470',message:'PDF iframe loaded',data:{pdfUrl},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+                    // #endregion
+                  }}
+                  onError={(e) => {
+                    // #region agent log
+                    fetch('http://127.0.0.1:7244/ingest/0247e7cd-30b8-41ea-9da5-caa078df417d',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/admin/pazienti/nuovo/nuovo-paziente-form.tsx:475',message:'PDF iframe error',data:{error:String(e)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+                    // #endregion
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        </>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
