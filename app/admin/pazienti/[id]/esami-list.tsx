@@ -3,6 +3,7 @@
 import { Prelievo, StatoPrelievo, TipoPrelievo } from '@/lib/supabase/types'
 import { format } from 'date-fns'
 import { it } from 'date-fns/locale/it'
+import { useRouter } from 'next/navigation'
 
 interface PrelievoWithDetails extends Prelievo {
   stato?: StatoPrelievo
@@ -14,6 +15,8 @@ interface EsamiListProps {
 }
 
 export default function EsamiList({ prelievi }: EsamiListProps) {
+  const router = useRouter()
+  
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '-'
     try {
@@ -21,6 +24,10 @@ export default function EsamiList({ prelievi }: EsamiListProps) {
     } catch {
       return dateString
     }
+  }
+
+  const handleRowClick = (prelievoId: string) => {
+    router.push(`/admin/esami/${prelievoId}`)
   }
 
   if (!prelievi || prelievi.length === 0) {
@@ -64,7 +71,11 @@ export default function EsamiList({ prelievi }: EsamiListProps) {
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
           {prelievi.map((prelievo) => (
-            <tr key={prelievo.id}>
+            <tr 
+              key={prelievo.id}
+              onClick={() => handleRowClick(prelievo.id)}
+              className="hover:bg-gray-50 cursor-pointer transition-colors"
+            >
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                 {prelievo.stato?.nome || '-'}
               </td>
