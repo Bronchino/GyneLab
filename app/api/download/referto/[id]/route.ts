@@ -1,84 +1,113 @@
-import { createServerClient, type CookieOptions } from '@supabase/ssr'
-import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 /**
- * STUB: Endpoint per download referto con signed URL S3
- * 
- * IMPORTANTE: Questo è uno stub che descrive la logica necessaria.
- * Per implementare correttamente serve:
- * 
- * 1. Service Role Key (NON anon key) in variabile d'ambiente:
- *    SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
- * 
- * 2. Client Supabase con service role (bypassa RLS):
- *    const supabaseAdmin = createClient(
- *      process.env.NEXT_PUBLIC_SUPABASE_URL!,
- *      process.env.SUPABASE_SERVICE_ROLE_KEY!,
- *      { auth: { autoRefreshToken: false, persistSession: false } }
- *    )
- * 
- * 3. Generazione signed URL da Supabase Storage:
- *    const { data, error } = await supabaseAdmin
- *      .storage
- *      .from('referti') // nome bucket
- *      .createSignedUrl(s3Key, 3600) // URL valido 1 ora
- * 
- * 4. Redirect al signed URL o stream del file
+ * GET download referto con signed URL S3
+ * Genera signed URL temporaneo e aggiorna stato prelievo a "Scaricato"
  */
 export async function GET(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const cookieStore = await cookies()
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll()
-        },
-        setAll(cookiesToSet) {
-          // Gestione cookie per middleware
-        },
-      },
+  try {
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return NextResponse.json(
+        { error: 'SUPABASE_SERVICE_ROLE_KEY non configurata' },
+        { status: 500 }
+      )
     }
-  )
 
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
-    return NextResponse.json({ error: 'Non autenticato' }, { status: 401 })
+    const prelievoId = params.id
+    const supabase = await createClient()
+    const supabaseAdmin = createAdminClient()
+
+    // Carica il prelievo per ottenere s3_key e verificare permessi
+    const { data: prelievo, error: prelievoError } = await supabase
+      .from('prelievi')
+      .select('id, esito_pdf_s3_key, stato_id, referto_pubblicato_at, referto_scade_at')
+      .eq('id', prelievoId)
+      .single()
+
+    if (prelievoError || !prelievo) {
+      return NextResponse.json(
+        { error: 'Prelievo non trovato' },
+        { status: 404 }
+      )
+    }
+
+    // Verifica che ci sia un referto caricato
+    if (!prelievo.esito_pdf_s3_key) {
+      return NextResponse.json(
+        { error: 'Referto non disponibile' },
+        { status: 404 }
+      )
+    }
+
+    // Verifica che il referto sia pubblicato e non scaduto (per pazienti)
+    if (prelievo.referto_scade_at) {
+      const scadeAt = new Date(prelievo.referto_scade_at)
+      if (scadeAt <= new Date()) {
+        return NextResponse.json(
+          { error: 'Referto scaduto' },
+          { status: 403 }
+        )
+      }
+    }
+
+    // Genera signed URL da Supabase Storage (valido per 1 ora)
+    const { data: signedUrlData, error: signedUrlError } = await supabaseAdmin.storage
+      .from('referti')
+      .createSignedUrl(prelievo.esito_pdf_s3_key, 3600)
+
+    if (signedUrlError || !signedUrlData) {
+      console.error('Errore generazione signed URL:', signedUrlError)
+      return NextResponse.json(
+        { error: 'Errore durante la generazione del link di download' },
+        { status: 500 }
+      )
+    }
+
+    // Trova lo stato "Scaricato" dalla tabella stati_prelievo
+    const { data: statoScaricato, error: statoError } = await supabase
+      .from('stati_prelievo')
+      .select('id')
+      .ilike('nome', 'scaricato')
+      .single()
+
+    // Aggiorna stato a "Scaricato" se lo stato corrente è "Refertato" o "Visionato"
+    // Non fallisce se lo stato non esiste o se già è "Scaricato"
+    if (!statoError && statoScaricato) {
+      // Verifica se lo stato corrente è "Refertato" o "Visionato" prima di aggiornare
+      const { data: statoCorrente } = await supabase
+        .from('stati_prelievo')
+        .select('nome')
+        .eq('id', prelievo.stato_id)
+        .single()
+
+      if (statoCorrente) {
+        const nomeStatoCorrente = statoCorrente.nome.toLowerCase()
+        if (nomeStatoCorrente === 'refertato' || nomeStatoCorrente === 'visionato') {
+          // Aggiorna stato a "Scaricato"
+          await supabase
+            .from('prelievi')
+            .update({
+              stato_id: statoScaricato.id,
+              referto_ultimo_download_at: new Date().toISOString(),
+            })
+            .eq('id', prelievoId)
+        }
+      }
+    }
+
+    // Redirect al signed URL
+    return NextResponse.redirect(signedUrlData.signedUrl)
+  } catch (error) {
+    console.error('Errore download referto:', error)
+    return NextResponse.json(
+      { error: 'Errore durante il download del referto' },
+      { status: 500 }
+    )
   }
-
-  const prelievoId = params.id
-  const s3Key = request.nextUrl.searchParams.get('s3_key')
-
-  if (!s3Key) {
-    return NextResponse.json({ error: 'S3 key mancante' }, { status: 400 })
-  }
-
-  // TODO: Implementare con service role:
-  // 1. Creare client Supabase con service role
-  // 2. Verificare che l'utente abbia i permessi (già fatto nelle route chiamanti)
-  // 3. Generare signed URL da Storage
-  // 4. Redirect o stream del file
-
-  return NextResponse.json(
-    {
-      error: 'Endpoint non implementato',
-      message: 'Serve service role key e configurazione Supabase Storage',
-      stub: {
-        prelievo_id: prelievoId,
-        s3_key: s3Key,
-        required_steps: [
-          'Creare client Supabase con SUPABASE_SERVICE_ROLE_KEY',
-          'Usare supabaseAdmin.storage.from(bucket).createSignedUrl(s3Key, expiresIn)',
-          'Redirect al signed URL generato',
-        ],
-      },
-    },
-    { status: 501 }
-  )
 }
 

@@ -4,6 +4,8 @@ import { notFound } from 'next/navigation'
 import { format } from 'date-fns'
 import { it } from 'date-fns/locale/it'
 import { Prelievo, Paziente, TipoPrelievo, StatoPrelievo, Laboratorio } from '@/lib/supabase/types'
+import UploadRefertoButton from './upload-referto-button'
+import CambioStatoPrelievo from './cambio-stato-prelievo'
 
 interface PrelievoWithDetails extends Prelievo {
   paziente?: Paziente
@@ -33,11 +35,12 @@ export default async function EsameDetailPage({
   }
 
   // Carica dati correlati
-  const [pazienteResult, tipoResult, statoResult, laboratorioResult] = await Promise.all([
+  const [pazienteResult, tipoResult, statoResult, laboratorioResult, statiDisponibiliResult] = await Promise.all([
     supabase.from('pazienti').select('*').eq('id', prelievo.paziente_id).single(),
     supabase.from('tipi_prelievo').select('*').eq('id', prelievo.tipo_prelievo_id).single(),
     supabase.from('stati_prelievo').select('*').eq('id', prelievo.stato_id).single(),
     supabase.from('laboratori').select('*').eq('id', prelievo.laboratorio_id).single(),
+    supabase.from('stati_prelievo').select('*').order('ordine', { ascending: true }),
   ])
 
   const prelievoWithDetails: PrelievoWithDetails = {
@@ -47,6 +50,8 @@ export default async function EsameDetailPage({
     stato: statoResult.data || undefined,
     laboratorio: laboratorioResult.data || undefined,
   }
+
+  const statiDisponibili = (statiDisponibiliResult.data || []) as StatoPrelievo[]
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '-'
@@ -163,6 +168,13 @@ export default async function EsameDetailPage({
                   className="block w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900"
                 />
               </div>
+              {prelievoWithDetails.stato && statiDisponibili.length > 0 && (
+                <CambioStatoPrelievo
+                  prelievoId={params.id}
+                  statoCorrente={prelievoWithDetails.stato}
+                  statiDisponibili={statiDisponibili}
+                />
+              )}
             </div>
           </div>
         </div>
@@ -205,21 +217,12 @@ export default async function EsameDetailPage({
             </svg>
             <h2 className="text-lg font-semibold text-gray-900">Referti</h2>
           </div>
-          <button
-            className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
-            disabled
-            title="Funzionalità in arrivo"
-          >
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            + Aggiungi Referto
-          </button>
+          <UploadRefertoButton prelievoId={params.id} hasReferto={hasReferto} />
         </div>
         <div className="px-6 py-5">
           {!hasReferto ? (
             <div className="text-center py-12">
-              <div className="text-4xl mb-4">😢</div>
+              <div className="text-4xl mb-4">😭</div>
               <p className="text-gray-500">Nessun referto caricato...</p>
             </div>
           ) : (
