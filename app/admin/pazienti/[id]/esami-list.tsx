@@ -69,7 +69,7 @@ export default function EsamiList({ prelievi }: EsamiListProps) {
                 {prelievo.stato?.nome || '-'}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                {prelievo.note || '-'}
+                {prelievo.commento || '-'}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                 {formatDate(prelievo.data_prelievo)}

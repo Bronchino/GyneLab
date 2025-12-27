@@ -170,11 +170,7 @@ export default async function PazienteDetailPage({
               <label className="block text-sm font-medium text-gray-500 mb-1">Luogo di nascita</label>
               <input
                 type="text"
-                value={
-                  paziente.nato_estero
-                    ? (paziente.stato_nascita_nome || paziente.stato_nascita_codice || '-')
-                    : `${paziente.luogo_nascita_comune || ''}${paziente.luogo_nascita_provincia ? ` (${paziente.luogo_nascita_provincia})` : ''}` || '-'
-                }
+                value={`${paziente.luogo_nascita_comune || ''}${paziente.luogo_nascita_provincia ? ` (${paziente.luogo_nascita_provincia})` : ''}` || '-'}
                 readOnly
                 className="block w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900"
               />

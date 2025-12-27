@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
   try {
     await requireAdmin() // Solo admin può creare prelievi
 
-    const { paziente_id, laboratorio_id, tipo_prelievo_id, data_prelievo, data_stimata_referto, note } =
+    const { paziente_id, laboratorio_id, tipo_prelievo_id, data_prelievo, data_stimata_referto, rif_interno, descrizione, report_medico } =
       await request.json()
 
     // Validazione campi obbligatori
@@ -100,8 +100,16 @@ export async function POST(request: NextRequest) {
       insertData.data_stimata_referto = data_stimata_referto
     }
 
-    if (note) {
-      insertData.note = note
+    if (rif_interno) {
+      insertData.rif_interno = rif_interno.trim()
+    }
+
+    if (descrizione) {
+      insertData.descrizione = descrizione.trim()
+    }
+
+    if (report_medico) {
+      insertData.report_medico = report_medico.trim()
     }
 
     // Inserisci il prelievo

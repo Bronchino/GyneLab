@@ -88,16 +88,8 @@ export default async function PazienteDetailPage({
             <div>
               <dt className="text-sm font-medium text-gray-500">Luogo di Nascita</dt>
               <dd className="mt-1 text-sm text-gray-900">
-                {paziente.nato_estero ? (
-                  <>
-                    {paziente.stato_nascita_nome || paziente.stato_nascita_codice || '-'}
-                  </>
-                ) : (
-                  <>
-                    {paziente.luogo_nascita_comune || '-'}
-                    {paziente.luogo_nascita_provincia && ` (${paziente.luogo_nascita_provincia})`}
-                  </>
-                )}
+                {paziente.luogo_nascita_comune || '-'}
+                {paziente.luogo_nascita_provincia && ` (${paziente.luogo_nascita_provincia})`}
               </dd>
             </div>
             <div>

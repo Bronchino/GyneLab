@@ -25,9 +25,6 @@ export default function EditPazienteForm({ paziente }: EditPazienteFormProps) {
     email: paziente.email || '',
     codice_fiscale: paziente.codice_fiscale || '',
     sesso: paziente.sesso || '',
-    nato_estero: paziente.nato_estero,
-    stato_nascita_codice: paziente.stato_nascita_codice || '',
-    stato_nascita_nome: paziente.stato_nascita_nome || '',
     auth_user_id: paziente.auth_user_id || null,
   })
 
@@ -43,7 +40,6 @@ export default function EditPazienteForm({ paziente }: EditPazienteFormProps) {
       const updateData: any = {
         nome: formData.nome,
         cognome: formData.cognome,
-        nato_estero: formData.nato_estero,
       }
 
       // Campi opzionali
@@ -70,12 +66,6 @@ export default function EditPazienteForm({ paziente }: EditPazienteFormProps) {
       
       if (formData.sesso) updateData.sesso = formData.sesso
       else updateData.sesso = null
-      
-      if (formData.stato_nascita_codice) updateData.stato_nascita_codice = formData.stato_nascita_codice
-      else updateData.stato_nascita_codice = null
-      
-      if (formData.stato_nascita_nome) updateData.stato_nascita_nome = formData.stato_nascita_nome
-      else updateData.stato_nascita_nome = null
       
       if (formData.auth_user_id) updateData.auth_user_id = formData.auth_user_id
       else updateData.auth_user_id = null

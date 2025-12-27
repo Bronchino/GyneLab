@@ -32,7 +32,7 @@ export default function PrelieviList({ prelievi }: PrelieviListProps) {
                 Data Prelievo
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
-                Note
+                Commento
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
                 Data Stimata Referto
@@ -52,7 +52,7 @@ export default function PrelieviList({ prelievi }: PrelieviListProps) {
                   {formatDate(prelievo.data_prelievo)}
                 </td>
                 <td className="px-6 py-4 text-sm text-gray-500">
-                  {prelievo.note || '-'}
+                  {prelievo.commento || '-'}
                 </td>
                 <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
                   {formatDate(prelievo.data_stimata_referto)}

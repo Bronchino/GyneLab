@@ -20,9 +20,6 @@ export default function NuovoPazienteForm() {
     email: '',
     codice_fiscale: '',
     sesso: '',
-    nato_estero: false,
-    stato_nascita_codice: '',
-    stato_nascita_nome: '',
     auth_user_id: null as string | null,
   })
 
@@ -38,7 +35,6 @@ export default function NuovoPazienteForm() {
       const insertData: any = {
         nome: formData.nome,
         cognome: formData.cognome,
-        nato_estero: formData.nato_estero,
       }
 
       // Campi opzionali (solo se valorizzati)
@@ -50,8 +46,6 @@ export default function NuovoPazienteForm() {
       if (formData.email) insertData.email = formData.email
       if (formData.codice_fiscale) insertData.codice_fiscale = formData.codice_fiscale
       if (formData.sesso) insertData.sesso = formData.sesso
-      if (formData.stato_nascita_codice) insertData.stato_nascita_codice = formData.stato_nascita_codice
-      if (formData.stato_nascita_nome) insertData.stato_nascita_nome = formData.stato_nascita_nome
       if (formData.auth_user_id) insertData.auth_user_id = formData.auth_user_id
 
       // RLS: staff può INSERT

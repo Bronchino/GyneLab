@@ -142,7 +142,7 @@ export default function StudioPrivacyForm({ studio, privacy }: StudioPrivacyForm
         studio_provincia: studioData.studio_provincia || null,
         studio_email: studioData.studio_email || null,
         studio_pec: studioData.studio_pec || null,
-        studio_portale_referti_url: studioData.studio_portale_referti_url || null,
+        portale_referti_url: studioData.studio_portale_referti_url || null, // Mappa al nome corretto del database
         titolare_cf: studioData.titolare_cf || null,
         titolare_piva: studioData.titolare_piva || null,
         titolare_qualifica: studioData.titolare_qualifica || null,

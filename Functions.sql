@@ -631,35 +631,14 @@ BEGIN
   NEW.data_nascita := v_birth_date;
   NEW.sesso := v_sesso;
 
-  -- Estero: codice luogo = Z###
-  IF v_luogo_code ~ '^Z[0-9]{3}$' THEN
-    NEW.nato_estero := true;
-    NEW.stato_nascita_codice := v_luogo_code;
+  -- Imposta il codice luogo di nascita (funziona sia per Italia che per estero)
+  NEW.luogo_nascita_codice := v_luogo_code;
 
-    -- opzionale: valorizza nome stato
-    SELECT s.nome_it INTO NEW.stato_nascita_nome
-    FROM public.stati_esteri s
-    WHERE s.codice = v_luogo_code;
-
-    -- pulisco i campi ""Italia""
-    NEW.luogo_nascita_codice := NULL;
-    NEW.luogo_nascita_comune := NULL;
-    NEW.luogo_nascita_provincia := NULL;
-
-  ELSE
-    -- Italia
-    NEW.nato_estero := false;
-    NEW.stato_nascita_codice := NULL;
-    NEW.stato_nascita_nome := NULL;
-
-    NEW.luogo_nascita_codice := v_luogo_code;
-
-    -- valorizza comune/provincia da codici_catastali
-    SELECT c.comune, c.provincia
-      INTO NEW.luogo_nascita_comune, NEW.luogo_nascita_provincia
-    FROM public.codici_catastali c
-    WHERE c.codice = v_luogo_code;
-  END IF;
+  -- Valorizza comune/provincia da codici_catastali (funziona anche per codici estero che iniziano con Z)
+  SELECT c.comune, c.provincia
+    INTO NEW.luogo_nascita_comune, NEW.luogo_nascita_provincia
+  FROM public.codici_catastali c
+  WHERE c.codice = v_luogo_code;
 
   RETURN NEW;
 EXCEPTION

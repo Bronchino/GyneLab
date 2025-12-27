@@ -107,7 +107,7 @@ export default async function EsameDetailPage({
                 <label className="block text-sm font-medium text-gray-500 mb-1">Rif. Interno</label>
                 <input
                   type="text"
-                  value={prelievo.note || ''}
+                  value={prelievo.commento || ''}
                   readOnly
                   className="block w-full rounded-md border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900"
                 />
@@ -236,7 +236,7 @@ export default async function EsameDetailPage({
                       </div>
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Note
+                      Commento
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                       Stato
@@ -252,7 +252,7 @@ export default async function EsameDetailPage({
                       {formatDate(prelievo.esito_pdf_uploaded_at)}
                     </td>
                     <td className="px-6 py-4 text-sm text-gray-500">
-                      {prelievo.note || '-'}
+                      {prelievo.commento || '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">

@@ -46,15 +46,21 @@ export async function GET(
   }
 
   // Recupera dati studio
-  const { data: studio, error: studioError } = await supabase
+  const { data: studioRaw, error: studioError } = await supabase
     .from('studio_impostazioni')
     .select('*')
     .order('updated_at', { ascending: false })
     .limit(1)
     .single()
 
-  if (studioError || !studio) {
+  if (studioError || !studioRaw) {
     return NextResponse.json({ error: 'Impostazioni studio non trovate' }, { status: 404 })
+  }
+
+  // Mappa portale_referti_url a studio_portale_referti_url per compatibilità con il codice
+  const studio = {
+    ...studioRaw,
+    studio_portale_referti_url: (studioRaw as any).portale_referti_url || null
   }
 
   // Sostituisce placeholder nel testo privacy

@@ -10,11 +10,17 @@ export default async function StudioPrivacyPage() {
 
   // Carica i dati dello studio (assumendo che ci sia un solo record o il primo)
   // Nota: potrebbe essere necessario adattare il nome della tabella
-  const { data: studioData } = await supabase
+  const { data: studioDataRaw } = await supabase
     .from('studio_impostazioni')
     .select('*')
     .limit(1)
     .maybeSingle()
+
+  // Mappa portale_referti_url a studio_portale_referti_url per compatibilità con il codice
+  const studioData = studioDataRaw ? {
+    ...studioDataRaw,
+    studio_portale_referti_url: (studioDataRaw as any).portale_referti_url || null
+  } : null
 
   // Carica il testo della privacy (assumendo che ci sia un solo record o il primo)
   const { data: privacyData } = await supabase

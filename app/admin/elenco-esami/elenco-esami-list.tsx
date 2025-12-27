@@ -104,16 +104,25 @@ export default function ElencoEsamiList({ prelievi, stati, statoSelezionato }: E
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                    Data Esecuzione
+                    Stato
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                    Rif.
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                    Eseguito il
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                    Referto il
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                     Paziente
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                    Tipologia Esame
+                    Tipo Esame
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                    Stato
+                    Descrizione
                   </th>
                   <th className="px-6 py-3 text-right text-xs font-medium uppercase tracking-wider text-gray-500">
                     Azioni
@@ -125,18 +134,6 @@ export default function ElencoEsamiList({ prelievi, stati, statoSelezionato }: E
                   const prelievoWithDetails = prelievo as PrelievoWithDetails
                   return (
                     <tr key={prelievo.id} className="hover:bg-gray-50">
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900">
-                        {formatDate(prelievo.data_prelievo)}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
-                        {prelievoWithDetails.paziente 
-                          ? `${prelievoWithDetails.paziente.cognome} ${prelievoWithDetails.paziente.nome}`
-                          : '-'
-                        }
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
-                        {prelievoWithDetails.tipo_prelievo?.nome || '-'}
-                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         {prelievoWithDetails.stato ? (
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatoColor(prelievoWithDetails.stato.colore)}`}>
@@ -148,13 +145,59 @@ export default function ElencoEsamiList({ prelievi, stati, statoSelezionato }: E
                           </span>
                         )}
                       </td>
+                      <td className="px-6 py-4 text-sm text-gray-500">
+                        {prelievo.commento || '------'}
+                      </td>
+                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900">
+                        {formatDate(prelievo.data_prelievo)}
+                      </td>
+                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                        {prelievo.referto_pubblicato_at ? formatDate(prelievo.referto_pubblicato_at) : 'n.d.'}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-900">
+                        {prelievoWithDetails.paziente 
+                          ? `${prelievoWithDetails.paziente.cognome} ${prelievoWithDetails.paziente.nome}`
+                          : '-'
+                        }
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-500">
+                        {prelievoWithDetails.tipo_prelievo?.nome || '-'}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-500">
+                        {prelievoWithDetails.tipo_prelievo?.descrizione || '-'}
+                      </td>
                       <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
-                        <a
-                          href={`/admin/prelievi/${prelievo.id}`}
-                          className="text-blue-600 hover:text-blue-900"
-                        >
-                          Dettaglio
-                        </a>
+                        <div className="flex items-center justify-end space-x-2">
+                          <a
+                            href={`/admin/prelievi/${prelievo.id}/edit`}
+                            className="group relative inline-flex items-center justify-center w-8 h-8 rounded bg-yellow-100 text-yellow-600 hover:bg-yellow-200 transition-colors"
+                            title="Modifica esame"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                            <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+                              Modifica esame
+                            </span>
+                          </a>
+                          <button
+                            onClick={() => {
+                              if (confirm('Sei sicuro di voler eliminare questo esame?')) {
+                                // TODO: Implementare eliminazione
+                                console.log('Elimina prelievo:', prelievo.id)
+                              }
+                            }}
+                            className="group relative inline-flex items-center justify-center w-8 h-8 rounded bg-red-100 text-red-600 hover:bg-red-200 transition-colors"
+                            title="Elimina esame"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                            <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+                              Elimina esame
+                            </span>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   )

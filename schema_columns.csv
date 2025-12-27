@@ -23,9 +23,6 @@ pazienti,created_at,timestamp with time zone,YES,now(),null,null,null
 pazienti,updated_at,timestamp with time zone,YES,now(),null,null,null
 pazienti,auth_user_id,uuid,YES,null,null,null,null
 pazienti,sesso,character,YES,null,1,null,null
-pazienti,nato_estero,boolean,NO,false,null,null,null
-pazienti,stato_nascita_codice,text,YES,null,null,null,null
-pazienti,stato_nascita_nome,text,YES,null,null,null,null
 pazienti_documenti,id,uuid,NO,gen_random_uuid(),null,null,null
 pazienti_documenti,paziente_id,uuid,NO,null,null,null,null
 pazienti_documenti,titolo,text,NO,null,null,null,null
@@ -56,7 +53,10 @@ prelievi,tipo_prelievo_id,uuid,NO,null,null,null,null
 prelievi,stato_id,uuid,NO,null,null,null,null
 prelievi,data_prelievo,date,NO,null,null,null,null
 prelievi,esito_pdf_url,text,YES,null,null,null,null
-prelievi,note,text,YES,null,null,null,null
+prelievi,commento,text,YES,null,null,null,null
+prelievi,rif_interno,text,YES,null,null,null,null
+prelievi,descrizione,text,YES,null,null,null,null
+prelievi,report_medico,text,YES,null,null,null,null
 prelievi,created_at,timestamp with time zone,YES,now(),null,null,null
 prelievi,updated_at,timestamp with time zone,YES,now(),null,null,null
 prelievi,data_stimata_referto,date,YES,null,null,null,null
