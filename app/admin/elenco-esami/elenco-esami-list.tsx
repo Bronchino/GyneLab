@@ -1,5 +1,7 @@
 'use client'
 
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Prelievo, Paziente, TipoPrelievo, StatoPrelievo } from '@/lib/supabase/types'
 import { format } from 'date-fns'
 import { it } from 'date-fns/locale/it'
@@ -14,9 +16,14 @@ interface ElencoEsamiListProps {
   prelievi: PrelievoWithDetails[]
   stati: StatoPrelievo[]
   statoSelezionato?: string
+  searchQuery?: string
 }
 
-export default function ElencoEsamiList({ prelievi, stati, statoSelezionato }: ElencoEsamiListProps) {
+export default function ElencoEsamiList({ prelievi, stati, statoSelezionato, searchQuery }: ElencoEsamiListProps) {
+  const router = useRouter()
+  const [searchTerm, setSearchTerm] = useState(searchQuery || '')
+  const [itemsToShow, setItemsToShow] = useState(20) // Mostra inizialmente 20 elementi
+  const ITEMS_PER_PAGE = 20
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '-'
     try {
@@ -33,8 +40,63 @@ export default function ElencoEsamiList({ prelievi, stati, statoSelezionato }: E
     } else {
       url.searchParams.delete('stato')
     }
+    if (searchTerm) {
+      url.searchParams.set('search', searchTerm)
+    } else {
+      url.searchParams.delete('search')
+    }
     window.location.href = url.toString()
   }
+
+  const handleDaRefertareFilter = () => {
+    const url = new URL(window.location.href)
+    url.searchParams.set('stato', 'da_refertare')
+    if (searchTerm) {
+      url.searchParams.set('search', searchTerm)
+    } else {
+      url.searchParams.delete('search')
+    }
+    window.location.href = url.toString()
+  }
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    const url = new URL(window.location.href)
+    if (searchTerm.trim()) {
+      url.searchParams.set('search', searchTerm.trim())
+    } else {
+      url.searchParams.delete('search')
+    }
+    // Mantieni il filtro stato se presente
+    if (statoSelezionato) {
+      url.searchParams.set('stato', statoSelezionato)
+    }
+    window.location.href = url.toString()
+  }
+
+  const handleClearFilters = () => {
+    const url = new URL(window.location.href)
+    url.searchParams.delete('stato')
+    url.searchParams.delete('search')
+    setSearchTerm('')
+    window.location.href = url.toString()
+  }
+
+  const handleRowClick = (prelievoId: string) => {
+    router.push(`/admin/esami/${prelievoId}`)
+  }
+
+  const handleLoadMore = () => {
+    setItemsToShow(prev => prev + ITEMS_PER_PAGE)
+  }
+
+  // Reset itemsToShow quando cambiano i filtri o la ricerca
+  useEffect(() => {
+    setItemsToShow(20)
+  }, [statoSelezionato, searchQuery])
+
+  const prelieviToShow = prelievi.slice(0, itemsToShow)
+  const hasMore = prelievi.length > itemsToShow
 
   const getStatoColor = (colore: string | null) => {
     if (!colore) return 'bg-gray-100 text-gray-800'
@@ -63,33 +125,74 @@ export default function ElencoEsamiList({ prelievi, stati, statoSelezionato }: E
     return colorMap[coloreLower] || 'bg-gray-100 text-gray-800'
   }
 
+  const isDaRefertareSelected = statoSelezionato === 'da_refertare'
+  // Mostra "Filtro: X" solo se c'è una ricerca attiva, non per i filtri di stato alternativi
+  const showFilterX = !!searchQuery
+
   return (
     <div>
-      {/* Filtri per stato */}
-      <div className="mb-6 flex flex-wrap gap-2">
-        <button
-          onClick={() => handleStatoFilter(null)}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-            !statoSelezionato
-              ? 'bg-teal-600 text-white'
-              : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-          }`}
-        >
-          Tutti
-        </button>
-        {stati.map((stato) => (
+      {/* Filtri e ricerca */}
+      <div className="mb-6 space-y-4">
+        {/* Filtri per stato */}
+        <div className="flex flex-wrap gap-2 items-center">
           <button
-            key={stato.id}
-            onClick={() => handleStatoFilter(stato.nome)}
+            onClick={() => handleStatoFilter(null)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              statoSelezionato === stato.nome
+              !statoSelezionato
                 ? 'bg-teal-600 text-white'
                 : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
             }`}
           >
-            {stato.nome}
+            Tutti
           </button>
-        ))}
+          <button
+            onClick={handleDaRefertareFilter}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              isDaRefertareSelected
+                ? 'bg-teal-600 text-white'
+                : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+            }`}
+          >
+            Da Refertare
+          </button>
+          {showFilterX && (
+            <button
+              onClick={handleClearFilters}
+              className="px-3 py-2 rounded-lg text-sm font-medium bg-red-600 text-white hover:bg-red-700 transition-colors flex items-center"
+            >
+              <span className="mr-1">Filtro:</span>
+              <span className="text-white font-bold">X</span>
+            </button>
+          )}
+        </div>
+
+        {/* Barra di ricerca */}
+        <div className="flex items-center gap-2">
+          <form onSubmit={handleSearch} className="flex-1 flex items-center gap-2">
+            <div className="relative flex-1">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Ricerca per riferimento/pa"
+                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+              />
+            </div>
+            <button
+              type="submit"
+              className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+            </button>
+          </form>
+        </div>
       </div>
 
       {/* Tabella */}
@@ -130,10 +233,14 @@ export default function ElencoEsamiList({ prelievi, stati, statoSelezionato }: E
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {prelievi.map((prelievo) => {
+                {prelieviToShow.map((prelievo) => {
                   const prelievoWithDetails = prelievo as PrelievoWithDetails
                   return (
-                    <tr key={prelievo.id} className="hover:bg-gray-50">
+                    <tr 
+                      key={prelievo.id} 
+                      onClick={() => handleRowClick(prelievo.id)}
+                      className="hover:bg-gray-50 cursor-pointer transition-colors"
+                    >
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         {prelievoWithDetails.stato ? (
                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatoColor(prelievoWithDetails.stato.colore)}`}>
@@ -146,7 +253,7 @@ export default function ElencoEsamiList({ prelievi, stati, statoSelezionato }: E
                         )}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-500">
-                        {prelievo.commento || '------'}
+                        {prelievo.rif_interno || prelievo.commento || '------'}
                       </td>
                       <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900">
                         {formatDate(prelievo.data_prelievo)}
@@ -164,10 +271,10 @@ export default function ElencoEsamiList({ prelievi, stati, statoSelezionato }: E
                         {prelievoWithDetails.tipo_prelievo?.nome || '-'}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-500">
-                        {prelievoWithDetails.tipo_prelievo?.descrizione || '-'}
+                        {prelievo.descrizione || '-'}
                       </td>
                       <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
-                        <div className="flex items-center justify-end space-x-2">
+                        <div className="flex items-center justify-end space-x-2" onClick={(e) => e.stopPropagation()}>
                           <a
                             href={`/admin/prelievi/${prelievo.id}/edit`}
                             className="group relative inline-flex items-center justify-center w-8 h-8 rounded bg-yellow-100 text-yellow-600 hover:bg-yellow-200 transition-colors"
@@ -181,7 +288,8 @@ export default function ElencoEsamiList({ prelievi, stati, statoSelezionato }: E
                             </span>
                           </a>
                           <button
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation()
                               if (confirm('Sei sicuro di voler eliminare questo esame?')) {
                                 // TODO: Implementare eliminazione
                                 console.log('Elimina prelievo:', prelievo.id)
@@ -204,6 +312,21 @@ export default function ElencoEsamiList({ prelievi, stati, statoSelezionato }: E
                 })}
               </tbody>
             </table>
+          </div>
+        )}
+        
+        {/* Footer con "Carica ulteriori" */}
+        {hasMore && (
+          <div className="px-6 py-4 border-t border-gray-200 text-center">
+            <button
+              onClick={handleLoadMore}
+              className="inline-flex items-center text-sm text-gray-600 hover:text-gray-900 transition-colors cursor-pointer"
+            >
+              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Carica ulteriori
+            </button>
           </div>
         )}
       </div>

@@ -10,12 +10,19 @@ interface PrelievoWithDetails extends Prelievo {
   stato?: StatoPrelievo
 }
 
+interface Statistiche {
+  totalePazienti: number
+  totaleEsami: number
+  esamiDaRefertare: number
+}
+
 interface EsamiTabelleProps {
   ultimiEsami: PrelievoWithDetails[]
   esamiNonRefertati: PrelievoWithDetails[]
+  statistiche: Statistiche
 }
 
-export default function EsamiTabelle({ ultimiEsami, esamiNonRefertati }: EsamiTabelleProps) {
+export default function EsamiTabelle({ ultimiEsami, esamiNonRefertati, statistiche }: EsamiTabelleProps) {
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '-'
     try {
@@ -79,6 +86,41 @@ export default function EsamiTabelle({ ultimiEsami, esamiNonRefertati }: EsamiTa
 
   return (
     <div className="space-y-8">
+      {/* Card Statistiche */}
+      <div className="bg-white shadow rounded-lg overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h2 className="text-lg font-semibold text-gray-900">Statistiche</h2>
+        </div>
+        <div className="px-6 py-6">
+          <div className="grid grid-cols-3 gap-6">
+            <div>
+              <div className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-1">
+                PAZIENTI TOT.
+              </div>
+              <div className="text-3xl font-bold text-gray-900">
+                {statistiche.totalePazienti}
+              </div>
+            </div>
+            <div>
+              <div className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-1">
+                ESAMI TOT.
+              </div>
+              <div className="text-3xl font-bold text-gray-900">
+                {statistiche.totaleEsami}
+              </div>
+            </div>
+            <div>
+              <div className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-1">
+                DA REFERTARE
+              </div>
+              <div className="text-3xl font-bold text-gray-900">
+                {statistiche.esamiDaRefertare}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Tabella 1: Ultimi 10 Esami */}
       <div className="bg-white shadow rounded-lg overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
@@ -141,7 +183,7 @@ export default function EsamiTabelle({ ultimiEsami, esamiNonRefertati }: EsamiTa
                         {getStatoBadge(prelievoWithDetails.stato, !!prelievo.referto_pubblicato_at)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        ------
+                        {prelievo.rif_interno || prelievo.commento || '------'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {formatDate(prelievo.data_prelievo)}
@@ -223,13 +265,13 @@ export default function EsamiTabelle({ ultimiEsami, esamiNonRefertati }: EsamiTa
                       className="cursor-pointer hover:bg-gray-50 transition-colors"
                     >
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        ------
+                        {prelievo.rif_interno || prelievo.commento || '------'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {formatDate(prelievo.data_prelievo)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {formatDate(prelievo.data_stimata_referto)}
+                        {prelievo.referto_pubblicato_at ? formatDate(prelievo.referto_pubblicato_at) : 'n.d.'}
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-900">
                         {prelievoWithDetails.paziente 

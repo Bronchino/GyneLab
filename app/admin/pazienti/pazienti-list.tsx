@@ -12,8 +12,14 @@ interface PazientiListProps {
   currentOrderBy?: string
 }
 
+const ITEMS_PER_PAGE = 20
+
 export default function PazientiList({ pazienti, canDelete, currentSort = 'asc', currentOrderBy = 'cognome' }: PazientiListProps) {
   const [generandoPrivacy, setGenerandoPrivacy] = useState<string | null>(null)
+  const [itemsToShow, setItemsToShow] = useState(20) // Mostra inizialmente 20 elementi
+  
+  const pazientiToShow = pazienti.slice(0, itemsToShow)
+  const hasMore = pazienti.length > itemsToShow
 
   const handleGeneraPrivacy = async (pazienteId: string, e: React.MouseEvent) => {
     e.stopPropagation()
@@ -107,6 +113,10 @@ export default function PazientiList({ pazienti, canDelete, currentSort = 'asc',
     }
   }
 
+  const handleLoadMore = () => {
+    setItemsToShow(prev => prev + ITEMS_PER_PAGE)
+  }
+
   return (
     <div className="bg-white shadow rounded-lg overflow-hidden">
       {pazienti.length === 0 ? (
@@ -192,7 +202,7 @@ export default function PazientiList({ pazienti, canDelete, currentSort = 'asc',
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {pazienti.map((paziente) => (
+              {pazientiToShow.map((paziente) => (
                 <tr
                   key={paziente.id}
                   onClick={(e) => handleRowClick(paziente.id, e)}
@@ -281,21 +291,17 @@ export default function PazientiList({ pazienti, canDelete, currentSort = 'asc',
           </table>
         </div>
       )}
-      {pazienti.length > 0 && (
+      {hasMore && (
         <div className="bg-gray-50 px-6 py-3 border-t border-gray-200">
-          <a
-            href="#"
-            className="text-sm text-gray-600 hover:text-gray-900 inline-flex items-center"
-            onClick={(e) => {
-              e.preventDefault()
-              // TODO: Implementare caricamento di ulteriori risultati
-            }}
+          <button
+            onClick={handleLoadMore}
+            className="text-sm text-gray-600 hover:text-gray-900 inline-flex items-center cursor-pointer"
           >
             Carica ulteriori
             <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
-          </a>
+          </button>
         </div>
       )}
     </div>
