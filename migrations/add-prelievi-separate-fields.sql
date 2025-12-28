@@ -7,3 +7,5 @@ ADD COLUMN IF NOT EXISTS rif_interno TEXT,
 ADD COLUMN IF NOT EXISTS descrizione TEXT,
 ADD COLUMN IF NOT EXISTS report_medico TEXT;
 
+
+

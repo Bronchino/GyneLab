@@ -4,3 +4,5 @@
 
 ALTER TABLE prelievi RENAME COLUMN note TO commento;
 
+
+

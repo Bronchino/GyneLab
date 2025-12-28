@@ -1,9 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
 import { requireStaff } from '@/lib/auth/require-role'
-import { Paziente } from '@/lib/supabase/types'
+import { Paziente, PazienteDocumento } from '@/lib/supabase/types'
 import { format } from 'date-fns'
 import { it } from 'date-fns/locale/it'
 import { notFound } from 'next/navigation'
+import UploadDocumentoForm from '@/app/admin/pazienti/[id]/upload-documento-form'
+import DocumentiList from '@/app/admin/pazienti/[id]/documenti-list'
 
 export default async function PazienteDetailPage({
   params,
@@ -24,6 +26,13 @@ export default async function PazienteDetailPage({
   if (error || !paziente) {
     notFound()
   }
+
+  // Carica documenti del paziente
+  const { data: documenti, error: documentiError } = await supabase
+    .from('pazienti_documenti')
+    .select('*')
+    .eq('paziente_id', params.id)
+    .order('uploaded_at', { ascending: false })
 
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '-'
@@ -97,6 +106,26 @@ export default async function PazienteDetailPage({
               <dd className="mt-1 text-sm text-gray-900">{paziente.sesso || '-'}</dd>
             </div>
           </dl>
+        </div>
+      </div>
+
+      {/* Sezione Documenti Paziente */}
+      <div className="bg-white shadow rounded-lg mt-6">
+        <div className="px-4 py-5 sm:p-6 border-b border-gray-200">
+          <h2 className="text-lg font-semibold text-gray-900">Documenti Paziente</h2>
+        </div>
+        <div className="px-4 py-5 sm:p-6 space-y-6">
+          {/* Form Upload */}
+          <div>
+            <h3 className="text-md font-medium text-gray-900 mb-4">Carica Nuovo Documento</h3>
+            <UploadDocumentoForm pazienteId={params.id} />
+          </div>
+
+          {/* Lista Documenti */}
+          <div>
+            <h3 className="text-md font-medium text-gray-900 mb-4">Documenti Caricati</h3>
+            <DocumentiList documenti={(documenti || []) as PazienteDocumento[]} pazienteId={params.id} />
+          </div>
         </div>
       </div>
     </div>

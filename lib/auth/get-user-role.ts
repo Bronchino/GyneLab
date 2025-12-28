@@ -32,8 +32,17 @@ export async function getUserRole(): Promise<UserRole | null> {
   }
 
   // Se non è né admin né staff, controllo se è paziente
-  const { data: isPazienteResult, error: pazienteError } = await supabase.rpc('is_paziente')
-  if (!pazienteError && isPazienteResult === true) {
+  // IMPORTANTE: I pazienti NON sono in profili_utenti, ma in pazienti con auth_user_id
+  // Quindi controlliamo direttamente la tabella pazienti invece di usare is_paziente() RPC
+  
+  const { data: pazienteCheck, error: pazienteCheckError } = await supabase
+    .from('pazienti')
+    .select('id, auth_user_id')
+    .eq('auth_user_id', user.id)
+    .limit(1)
+    .maybeSingle()
+  
+  if (!pazienteCheckError && pazienteCheck) {
     return 'paziente'
   }
 
@@ -85,4 +94,3 @@ export async function isPaziente(): Promise<boolean> {
   
   return data === true
 }
-

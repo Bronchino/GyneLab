@@ -42,7 +42,8 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/api/auth') ||
     pathname.startsWith('/debug-role') ||
     pathname.startsWith('/setup-staff') ||
-    pathname.startsWith('/api/create-staff-users')
+    pathname.startsWith('/api/create-staff-users') ||
+    pathname.startsWith('/unauthorized')
   ) {
     return response
   }
@@ -72,4 +73,3 @@ export const config = {
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
-

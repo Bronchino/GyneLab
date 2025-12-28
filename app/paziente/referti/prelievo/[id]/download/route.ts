@@ -71,8 +71,10 @@ export async function GET(
   // - Genera signed URL temporaneo (es. 1 ora)
   // - Redirecta al signed URL
   
-  return NextResponse.redirect(
-    `/api/download/referto/${prelievoId}?s3_key=${encodeURIComponent(prelievo.esito_pdf_s3_key)}`
-  )
+  // Costruisci URL assoluto per il redirect (richiesto da Next.js)
+  const baseUrl = request.nextUrl.origin
+  const downloadUrl = new URL(`/api/download/referto/${prelievoId}`, baseUrl)
+  
+  return NextResponse.redirect(downloadUrl)
 }
 

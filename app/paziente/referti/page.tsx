@@ -21,18 +21,29 @@ export default async function RefertiPage() {
     return <div>Errore: paziente non trovato</div>
   }
 
+  // Recupera i dati del paziente per il saluto
+  const { data: paziente, error: pazienteError } = await supabase
+    .from('pazienti')
+    .select('nome, cognome')
+    .eq('id', currentPazienteId)
+    .single()
+
   // Query 1: Prelievi con referti pubblicati e non scaduti
   // RLS: paziente può vedere solo i propri prelievi
-  // Filtriamo lato client anche per referto pubblicato e non scaduto
+  // Include join con tipi_prelievo per ottenere il nome dell'esame
   const { data: prelievi, error: prelieviError } = await supabase
     .from('prelievi')
-    .select('*')
+    .select(`
+      *,
+      tipo_prelievo:tipi_prelievo(nome)
+    `)
     .eq('paziente_id', currentPazienteId)
     .not('referto_pubblicato_at', 'is', null)
     .order('data_prelievo', { ascending: false })
 
   // Filtraggio lato server per scadenza (compatibile con RLS)
-  const prelieviConReferti = (prelievi || []).filter((p: Prelievo) => {
+  // Il tipo restituito dalla query include tipo_prelievo come oggetto annidato
+  const prelieviConReferti = (prelievi || []).filter((p: any) => {
     if (!p.referto_pubblicato_at) return false
     if (p.referto_scade_at) {
       const scadeAt = new Date(p.referto_scade_at)
@@ -60,25 +71,34 @@ export default async function RefertiPage() {
     return true
   })
 
-  if (prelieviError || documentiError) {
+  if (prelieviError || documentiError || pazienteError) {
     return (
       <div className="text-red-600">
-        Errore nel caricamento dei dati: {prelieviError?.message || documentiError?.message}
+        Errore nel caricamento dei dati: {prelieviError?.message || documentiError?.message || pazienteError?.message}
       </div>
     )
   }
 
+  // Determina il saluto in base all'ora
+  const ora = new Date().getHours()
+  const saluto = ora >= 6 && ora < 13 ? 'Buongiorno' : ora >= 13 && ora < 20 ? 'Buonasera' : 'Buonanotte'
+  const nomePaziente = paziente ? `${paziente.nome} ${paziente.cognome}`.trim() : ''
+
   return (
     <div className="px-4 py-6 sm:px-0">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">I Miei Referti e Documenti</h1>
-        <p className="mt-2 text-sm text-gray-600">
-          Consulta i tuoi referti e documenti disponibili
-        </p>
+        {nomePaziente && (
+          <h1 className="text-3xl font-bold text-gray-900">
+            {saluto}, {nomePaziente}!
+          </h1>
+        )}
+        {!nomePaziente && (
+          <h1 className="text-3xl font-bold text-gray-900">I Miei Referti e Documenti</h1>
+        )}
       </div>
 
       <RefertiList 
-        prelievi={prelieviConReferti as Prelievo[]}
+        prelievi={prelieviConReferti as any}
         documenti={documentiDisponibili as PazienteDocumento[]}
       />
     </div>

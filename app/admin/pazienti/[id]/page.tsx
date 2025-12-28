@@ -4,7 +4,10 @@ import { format } from 'date-fns'
 import { it } from 'date-fns/locale/it'
 import { notFound } from 'next/navigation'
 import EsamiList from './esami-list'
-import { Prelievo, StatoPrelievo, TipoPrelievo } from '@/lib/supabase/types'
+import { Prelievo, StatoPrelievo, TipoPrelievo, PazienteDocumento } from '@/lib/supabase/types'
+import RigeneraPasswordButton from './rigenera-password-button'
+import UploadDocumentoForm from './upload-documento-form'
+import DocumentiList from './documenti-list'
 
 interface PrelievoWithDetails extends Prelievo {
   stato?: StatoPrelievo
@@ -71,6 +74,13 @@ export default async function PazienteDetailPage({
     tipo_prelievo: tipiMap.get(prelievo.tipo_prelievo_id),
   }))
 
+  // Carica documenti del paziente
+  const { data: documenti, error: documentiError } = await supabase
+    .from('pazienti_documenti')
+    .select('*')
+    .eq('paziente_id', params.id)
+    .order('uploaded_at', { ascending: false })
+
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '-'
     try {
@@ -110,15 +120,11 @@ export default async function PazienteDetailPage({
           <h2 className="text-lg font-semibold text-gray-900">Dettagli Paziente</h2>
           <div className="ml-auto flex space-x-3">
             {paziente.auth_user_id && (
-              <button
-                className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
-                title="Resetta Password"
-              >
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-                Resetta Password
-              </button>
+              <RigeneraPasswordButton
+                pazienteId={params.id}
+                pazienteNome={paziente.nome}
+                pazienteCognome={paziente.cognome}
+              />
             )}
             <a
               href={`/admin/pazienti/${params.id}/edit`}
@@ -256,6 +262,29 @@ export default async function PazienteDetailPage({
         </div>
         <div className="px-6 py-5">
           <EsamiList prelievi={prelieviWithDetails} />
+        </div>
+      </div>
+
+      {/* Sezione Documenti Paziente */}
+      <div className="bg-white shadow rounded-lg mt-6">
+        <div className="px-6 py-4 border-b border-gray-200 flex items-center">
+          <svg className="w-5 h-5 mr-2 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          <h2 className="text-lg font-semibold text-gray-900">Documenti Paziente</h2>
+        </div>
+        <div className="px-6 py-5 space-y-6">
+          {/* Form Upload */}
+          <div>
+            <h3 className="text-md font-medium text-gray-900 mb-4">Carica Nuovo Documento</h3>
+            <UploadDocumentoForm pazienteId={params.id} />
+          </div>
+
+          {/* Lista Documenti */}
+          <div>
+            <h3 className="text-md font-medium text-gray-900 mb-4">Documenti Caricati</h3>
+            <DocumentiList documenti={(documenti || []) as PazienteDocumento[]} pazienteId={params.id} />
+          </div>
         </div>
       </div>
     </div>

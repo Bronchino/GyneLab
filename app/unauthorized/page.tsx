@@ -1,4 +1,20 @@
-export default function UnauthorizedPage() {
+import { redirect } from 'next/navigation'
+import { getUserRole } from '@/lib/auth/get-user-role'
+
+export default async function UnauthorizedPage() {
+  // Determina il ruolo per fare redirect alla dashboard corretta
+  const role = await getUserRole()
+  
+  // Redirect alla dashboard appropriata invece di /login per evitare loop
+  if (role === 'admin') {
+    redirect('/admin/pazienti')
+  } else if (role === 'segretaria') {
+    redirect('/staff/pazienti')
+  } else if (role === 'paziente') {
+    redirect('/paziente/referti')
+  }
+  
+  // Se non autenticato o ruolo non determinato, mostra la pagina
   return (
     <div className="flex min-h-screen items-center justify-center">
       <div className="text-center">
